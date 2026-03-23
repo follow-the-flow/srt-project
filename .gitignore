@@ -1,0 +1,28 @@
+# Environment and secrets
+*.env
+*.token
+*.credential
+credentials.json
+
+# Claude local settings
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documents - 部分不上传
+docs/电子系_Python_Manual_byHH.MD
+电子系_Python_Manual_byHH.MD
