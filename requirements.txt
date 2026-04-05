@@ -8,6 +8,9 @@ matplotlib>=3.7.0
 flask>=3.0.0
 werkzeug>=3.0.0
 
-# Optional: for hand tracking (original project)
+# Hand tracking with YOLOv8-pose
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+
+# Optional: MediaPipe (alternative to YOLO)
 # mediapipe>=0.10.0
-# opencv-python>=4.8.0
