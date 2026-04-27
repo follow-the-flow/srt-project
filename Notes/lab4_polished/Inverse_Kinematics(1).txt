@@ -1,0 +1,126 @@
+function [phi, phi_optimal]  = qarmInverseKinematics(p, gamma, phi_prev)
+
+%% QUANSER_ARM_IPK
+% v 4.0 - 4th June 2020
+
+% REFERENCE: 
+% Chapter 4. Inverse Kinematics
+% Robot Dynamics and Control 
+% Spong, Vidyasagar
+% 1989
+
+% INPUTS:
+% p        : end-effector position vector expressed in base frame {0}
+% gamma    : wrist rotation angle gamma
+
+% OUTPUTS:
+% phi_optimal : Best solution depending on phi_prev
+% phi         : All four Inverse Kinematics solutions as a 4x4 matrix. 
+%               Each col is a solution.
+
+%% Manipulator parameters:
+L1 = 0.1400;
+L2 = 0.3500;
+L3 = 0.0500;
+L4 = 0.2500;
+L5 = 0.1500;
+beta = atan(L3/L2);
+
+%% Alternate parameters
+lambda1 =  L1;
+lambda2 =  sqrt(L2^2+L3^2);
+lambda3 =  L4+L5;
+
+%% Initialization
+theta = zeros(4, 4);
+phi = zeros(4, 4);
+
+%% Joint angle 2 and 3: 
+% Equations:
+    % lambda2 cos(theta2) + (-lambda3) sin(theta2 + theta3) = sqrt(x^2 + y^2)
+    %   A     cos( 2    ) +     C      sin(   2   +    3  ) =    D
+    
+    % lambda2 sin(theta2) - (-lambda3) cos(theta2 + theta3) = lambda1 - z
+    %   A     sin( 2    ) -     C      cos(   2   +    3  ) =    H
+
+% Solution:
+    A = lambda2;
+    C = lambda3;
+    H = lambda1-p(3);
+    D1 = sqrt(p(1)^2+p(2)^2);
+    D2 = -sqrt(p(1)^2+p(2)^2);
+    F = (D1^2+H^2-A^2-C^2)/(2*A);
+
+    theta(3,1) = 2*atan2( C + sqrt(C^2 - F^2) , F );
+	theta(3,2) = 2*atan2( C - sqrt(C^2 - F^2) , F );
+    theta(3,3) = theta(3,1);
+	theta(3,4) = theta(3,2);
+
+    M = A+C*sin(theta(3,1));
+    N = -C*cos(theta(3,1));
+    cos_term = (D1*M+H*N)/(M^2+N^2);
+    sin_term = (H-N*cos_term)/M;
+    theta(2,1) = atan2(sin_term, cos_term);
+
+    M = A+C*sin(theta(3,2));
+    N = -C*cos(theta(3,2));
+    cos_term = (D1*M+H*N)/(M^2+N^2);
+    sin_term = (H-N*cos_term)/M;
+    theta(2,2) = atan2(sin_term, cos_term);
+
+    M = A+C*sin(theta(3,3));
+    N = -C*cos(theta(3,3));
+    cos_term = (D2*M+H*N)/(M^2+N^2);
+    sin_term = (H-N*cos_term)/M;
+    theta(2,3) = atan2(sin_term, cos_term);
+
+    M = A+C*sin(theta(3,4));
+    N = -C*cos(theta(3,4));
+    cos_term = (D2*M+H*N)/(M^2+N^2);
+    sin_term = (H-N*cos_term)/M;
+    theta(2,4) = atan2(sin_term, cos_term);
+
+
+%% Joint angle 1:
+% Equation:
+    % y / x = tan(theta1);
+
+% Solution
+    theta(1,1) = atan2(p(2)/(lambda2*cos(theta(2,1))-lambda3*sin(theta(2,1)+theta(3,1))),p(1)/(lambda2*cos(theta(2,1))-lambda3*sin(theta(2,1)+theta(3,1))));
+    theta(1,2) = atan2(p(2)/(lambda2*cos(theta(2,2))-lambda3*sin(theta(2,2)+theta(3,2))),p(1)/(lambda2*cos(theta(2,2))-lambda3*sin(theta(2,2)+theta(3,2))));
+    theta(1,3) = atan2(p(2)/(lambda2*cos(theta(2,3))-lambda3*sin(theta(2,3)+theta(3,3))),p(1)/(lambda2*cos(theta(2,3))-lambda3*sin(theta(2,3)+theta(3,3))));
+    theta(1,4) = atan2(p(2)/(lambda2*cos(theta(2,4))-lambda3*sin(theta(2,4)+theta(3,4))),p(1)/(lambda2*cos(theta(2,4))-lambda3*sin(theta(2,4)+theta(3,4))));
+    
+%% Remap theta back to phi
+phi(1,:) = theta(1,:);
+phi(2,:) = theta(2,:)+pi/2-beta;
+phi(3,:) = theta(3,:)+beta;
+phi(4,:) = theta(4,:);
+
+phi = mod(phi + pi, 2*pi) - pi;
+
+phi_optimal = phi(:,1);
+if (norm(phi_optimal - phi_prev) > norm(phi(:,2) - phi_prev)) || (check_joint_limits(phi_optimal))
+    phi_optimal = phi(:,2);
+end
+if (norm(phi_optimal - phi_prev) > norm(phi(:,3) - phi_prev)) || (check_joint_limits(phi_optimal))
+    phi_optimal = phi(:,3);
+end
+if (norm(phi_optimal - phi_prev) > norm(phi(:,4) - phi_prev)) || (check_joint_limits(phi_optimal))
+    phi_optimal = phi(:,4);
+end
+if (check_joint_limits(phi_optimal))
+    phi_optimal = [0;0;0;0];
+end
+
+end
+
+function flag = check_joint_limits(phi)
+    flag = 0;
+    if phi(1) > 170*pi/180 || phi(1) < -170*pi/180 ...
+        || phi(2) > 80*pi/180 || phi(2) < -80*pi/180 ...
+        || phi(3) > 75*pi/180 || phi(3) < -95*pi/180 ...
+        || phi(4) > 160*pi/180 || phi(4) < -160*pi/180
+    flag = 1;
+    end
+end
