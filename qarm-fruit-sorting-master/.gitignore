@@ -1,0 +1,39 @@
+# MATLAB / Simulink build artifacts
+slprj/
+*.slxc
+*.autosave
+*.asv
+*.mex*
+*.slx.r20*
+octave-workspace
+
+# Python
+__pycache__/
+# Voice control model (40MB binary, downloaded per-machine)
+models/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Runtime / session files (local to each workspace)
+# Note: teach_points.json is intentionally tracked (team-shared poses).
+calibration.json
+session_cal.json
+session_cal.json.bak_*
+logs/
+.claude/
+
+# Live camera captures (workspace-specific)
+figures/live_*.png
+figures/preview_*.png
+figures/detection_result.png
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
